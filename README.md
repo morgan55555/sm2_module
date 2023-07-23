@@ -114,6 +114,6 @@ registry.SendMessage(funcId, data, dataLen);
 
 
 ### Examples
- - [Raw module (without registry)](https://github.com/morgan55555/sm2_module/examples/RawModuleExample/RawModuleExample.ino)
- - [Enclosure Light single module](https://github.com/morgan55555/sm2_module/examples/SingleModuleExample/SingleModuleExample.ino)
- - [Enclosure+EmergencyStop multiple module](https://github.com/morgan55555/sm2_module/examples/MultipleModulesExample/MultipleModulesExample.ino)
+ - [Raw module (without registry)](https://github.com/morgan55555/sm2_module/blob/main/examples/RawModuleExample/RawModuleExample.ino)
+ - [Enclosure Light single module](https://github.com/morgan55555/sm2_module/blob/main/examples/SingleModuleExample/SingleModuleExample.ino)
+ - [Enclosure+EmergencyStop multiple module](https://github.com/morgan55555/sm2_module/blob/main/examples/MultipleModulesExample/MultipleModulesExample.ino)
