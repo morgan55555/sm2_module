@@ -29,10 +29,10 @@
 
 class SM2Module {
   public:
-    SM2Module(MCP_CAN *canBus, MODULE_TYPE moduleType, uint32_t random,
+    SM2Module(MODULE_TYPE moduleType, uint32_t random,
               uint8_t indexPin = 0, uint16_t axisLen = 0, uint8_t axisLimitSite = 0);
 
-    void Init();
+    void Init(MCP_CAN *canBus);
 
     void ProcessGenCmd(GEN_CMD cmd);
     void ProcessLongpack(uint32_t rxId, uint8_t rxBuf[8], uint8_t rxLen);

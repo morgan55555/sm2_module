@@ -25,11 +25,11 @@ SM2Registry registry(CAN_CS_PIN, CAN_INTERRUPT_PIN_OPTIONAL);
 
 Then create an virtual module. It's not a real module, just a fake module for gathering CAN ids.
 ~~~
-// You can use &registry.can as CAN, if you using sm2registry
 // MAC_RANDOM_NUM - random salt for MAC. It's extremely useful, when you creating modules of
 // different types, for example: MODULE_LINEAR
-(It's need to be different, even if it's not in the same physical module).
-SM2Module vmodule(CAN, MODULE_TYPE, MAC_RANDOM_NUM);
+// (It's need to be different, even if it's not in the same physical module).
+// Optional parameters for axis module: indexPin, axisLen, axisLimitSite
+SM2Module vmodule(MODULE_TYPE, MAC_RANDOM_NUM);
 ~~~
 
 <details>

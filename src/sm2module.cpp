@@ -27,15 +27,11 @@
 #define MODULE_INDEX_NONE 0xFF
 
 
-SM2Module::SM2Module(MCP_CAN *canBus, MODULE_TYPE moduleType, uint32_t random,
+SM2Module::SM2Module(MODULE_TYPE moduleType, uint32_t random,
                      uint8_t indexPin, uint16_t axisLen, uint8_t axisLimitSite) {
     
     module_type = moduleType;
     module_mac = (((long(moduleType) & 0x1ff) << 20) | ((long(random) & 0x7ffff) << 1));
-
-    can = canBus;
-
-    longpack.Init(can, module_mac | CAN_EXT_FLAG | MAC_SEND_POSTFIX);
 
     index_pin = indexPin;
     axis_len = axisLen;
@@ -83,7 +79,11 @@ SM2Module::SM2Module(MCP_CAN *canBus, MODULE_TYPE moduleType, uint32_t random,
 }
 
 
-void SM2Module::Init() {
+void SM2Module::Init(MCP_CAN *canBus) {
+    can = canBus;
+
+    longpack.Init(can, module_mac | CAN_EXT_FLAG | MAC_SEND_POSTFIX);
+
     if(index_pin)
         pinMode(index_pin, INPUT);
 }

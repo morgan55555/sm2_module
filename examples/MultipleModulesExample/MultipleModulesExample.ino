@@ -15,8 +15,8 @@
 #define DOOR_DEBOUNCE_DELAY 50
 
 SM2Registry registry(10);
-SM2Module vmodule(&registry.can, MODULE_ENCLOSURE, 123);
-SM2Module vmodule2(&registry.can, MODULE_EMERGENCY_STOP, 123);
+SM2Module vmodule(MODULE_ENCLOSURE, 123);
+SM2Module vmodule2(MODULE_EMERGENCY_STOP, 123);
 
 uint16_t funcId;
 uint8_t dataLen = 0;
@@ -55,9 +55,6 @@ void setup() {
     e_stop_state = digitalRead(E_STOP_PIN);
 
     door_last_state = door_state;
-
-    // Set light state
-    digitalWrite(E_STOP_G_PIN, 0);
 
     // Initial report
     report_door();

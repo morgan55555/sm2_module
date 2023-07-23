@@ -38,7 +38,7 @@ void SM2Registry::Init(const uint32_t spiClock) {
 
     // Init all modules
     for (uint8_t i = 0; i < module_count; i++)
-        modules[i]->Init();
+        modules[i]->Init(&can);
 
     ConfigureModules();
     FillFuncMsgIds();

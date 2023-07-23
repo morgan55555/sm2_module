@@ -6,7 +6,7 @@ uint8_t len = 0;
 uint8_t rxBuf[8];
 
 MCP_CAN CAN0(10);
-SM2Module vmodule(&CAN0, MODULE_ENCLOSURE, 123);
+SM2Module vmodule(MODULE_ENCLOSURE, 123);
 
 void setup() {
     Serial.begin(115200);
@@ -20,6 +20,8 @@ void setup() {
 
     CAN0.setMode(MCP_NORMAL);
     Serial.println("MCP2515 Initialized Successfully!");
+
+    vmodule.Init(&CAN0);
 
     while (!vmodule.IsConfigured()) {
         

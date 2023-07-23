@@ -2,7 +2,7 @@
 #include <sm2module.h>
 
 SM2Registry registry(10);
-SM2Module vmodule(&registry.can, MODULE_ENCLOSURE, 123);
+SM2Module vmodule(MODULE_ENCLOSURE, 123);
 
 uint16_t funcId;
 uint8_t dataLen = 0;
