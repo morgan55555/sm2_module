@@ -24,7 +24,7 @@
 #include "funcs.h"
 #include "types.h"
 
-#define FIRMWARE_VERSION "v1.11.5"
+#define FIRMWARE_VERSION "v9.9.9"
 #define MODULE_MAX_COUNT 4
 #define MAX_SYS_CMD_LEN 64
 

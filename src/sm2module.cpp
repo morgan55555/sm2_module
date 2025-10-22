@@ -42,6 +42,9 @@ SM2Module::SM2Module(MODULE_TYPE moduleType, uint32_t random,
         case MODULE_PRINT_V_SM1:
             FUNC_LIST_INIT(print_func_list_);
             break;
+        case MODULE_DUAL_EXTRUDER:
+            FUNC_LIST_INIT(dual_extruder_func_list_);
+            break;
         case MODULE_LASER:
             FUNC_LIST_INIT(laser_func_list_);
             break;
@@ -52,8 +55,6 @@ SM2Module::SM2Module(MODULE_TYPE moduleType, uint32_t random,
             FUNC_LIST_INIT(cnc_func_list_);
             break;
         case MODULE_LINEAR:
-            FUNC_LIST_INIT(linear_func_list_);
-            break;
         case MODULE_LINEAR_TMC:
             FUNC_LIST_INIT(linear_func_list_);
             break;
@@ -74,6 +75,25 @@ SM2Module::SM2Module(MODULE_TYPE moduleType, uint32_t random,
             break;
         case MODULE_EMERGENCY_STOP:
             FUNC_LIST_INIT(stop_func_list_);
+            break;
+        case MODULE_CNC_200W:
+            FUNC_LIST_INIT(cnc_200w_func_list_);
+            break;
+        case MODULE_ENCLOSURE_A400:
+            FUNC_LIST_INIT(enclosure_a400_func_list_);
+            break;
+        case MODULE_DRYBOX:
+            FUNC_LIST_INIT(drybox_func_list_);
+            break;
+        case MODULE_CALIBRATOR:
+            FUNC_LIST_INIT(calibrator_func_list_);
+            break;
+        case MODULE_LASER_20W:
+        case MODULE_LASER_40W:
+            FUNC_LIST_INIT(laser_20w40w_func_list_);
+            break;
+        default:
+            FUNC_LIST_INIT(default_func_list_);
             break;
     }
 }

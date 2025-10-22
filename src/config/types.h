@@ -35,8 +35,15 @@ typedef enum {
   MODULE_PRINT_V_SM1       = 10, // 10
   MODULE_FAN               = 11, // 11
   MODULE_LINEAR_TMC        = 12, // 12
-  MODULE_3DP_DUAL_EXTRUDER = 13, // 13
+  MODULE_DUAL_EXTRUDER     = 13, // 13
   MODULE_LASER_10W         = 14, // 14
+  MODULE_CNC_200W          = 15, // 15
+  MODULE_ENCLOSURE_A400    = 16, // 16
+  MODULE_DRYBOX            = 17, // 17
+  MODULE_CALIBRATOR        = 18, // 18
+  MODULE_LASER_20W         = 19, // 19
+  MODULE_LASER_40W         = 20, // 20
+  MODULE_ROTARY_2023       = 21, // 21
 } MODULE_TYPE;
 
 
