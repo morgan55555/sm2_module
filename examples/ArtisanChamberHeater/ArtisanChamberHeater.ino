@@ -4,6 +4,20 @@
 #include <PID_v1.h>
 #include <DHT.h>
 
+// Debug
+// #define UART_ENABLED 1
+#define UART_SPEED 115200
+
+#if defined UART_ENABLED
+   #define debug_init()   Serial.begin(UART_SPEED)
+   #define debug(...)     Serial.print(__VA_ARGS__)
+   #define debugln(...)   Serial.println(__VA_ARGS__)
+#else
+   #define debug_init()
+   #define debug(...)
+   #define debugln(...)
+#endif
+
 // Heater pins
 #define TEMP_SENSOR A5
 #define RELAY_FAN 4
@@ -76,7 +90,10 @@ uint8_t dataLen = 0;
 uint8_t data[8];
 
 void setup() {
-    Serial.begin(115200);
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, HIGH);
+    
+    debug_init();
 
     // Init sensor pin
     pinMode(TEMP_SENSOR, INPUT);
@@ -104,7 +121,8 @@ void setup() {
     // Init registry and modules
     registry.Init();
 
-    Serial.println(F("All modules configured successfully!"));
+    digitalWrite(LED_BUILTIN, LOW);
+    debugln(F("All modules configured successfully!"));
 
     // Initial report
     report_lifetime();
@@ -134,8 +152,8 @@ void set_light(uint8_t r, uint8_t g, uint8_t b) {
     // But now it will be a temperature!
     if (r > 0) {
         Setpoint = r;
-        Serial.print(F("New temperature: "));
-        Serial.println(Setpoint);
+        debug(F("New temperature: "));
+        debugln(Setpoint);
         heater_start();
     } else {
         heater_stop();
@@ -198,7 +216,7 @@ void report_status() {
 }
 
 void emergency_stop() {
-    Serial.println("Emergency stop!");
+    debugln("Emergency stop!");
     return registry.DeathLoop();
 }
 
@@ -208,15 +226,19 @@ void loop() {
             case FUNC_SET_PURIFIER:
                 switch (data[0]) {
                     case PURIFIER_SET_FAN_STA:
+                        debugln(F("SET STATUS"));
                         set_fan_status(data[1], data[2]);
                         break;
                     case PURIFIER_SET_FAN_GEARS:
+                        debugln(F("SET GEARS"));
                         set_fan_gears(data[1]);
                         break;
                     case PURIFIER_SET_FAN_POWER:
+                        debugln(F("SET POWER"));
                         set_fan_power(data[1]);
                         break;
                     case PURIFIER_SET_LIGHT:
+                        debugln(F("SET LIGHT"));
                         set_light(data[1], data[2], data[3]);
                         break;
                 }
@@ -224,24 +246,31 @@ void loop() {
             case FUNC_REPORT_PURIFIER:
                 switch (data[0]) {
                     case PURIFIER_REPORT_LIFETIME:
+                        debugln(F("REPORT LIFETIME"));
                         report_lifetime();
                         break;
                     case PURIFIER_REPORT_ERR:
+                        debugln(F("REPORT ERR"));
                         report_err();
                         break;
                     case PURIFIER_REPORT_FAN_STA:
+                        debugln(F("REPORT FAN"));
                         report_fan_speed();
                         break;
                     case PURIFIER_REPORT_ELEC:
+                        debugln(F("REPORT ELEC"));
                         report_fan_elect();
                         break;
                     case PURIFIER_REPORT_POWER:
+                        debugln(F("REPORT POWER"));
                         report_fan_power();
                         break;
                     case PURIFIER_REPORT_STATUS:
+                        debugln(F("REPORT STATUS"));
                         report_status();
                         break;
                     case PURIFIER_INFO_ALL:
+                        debugln(F("REPORT ALL"));
                         report_lifetime();
                         report_err();
                         report_fan_speed();
@@ -252,6 +281,7 @@ void loop() {
                 }
                 break;
             case FUNC_EMERGENCY_STOP:
+                debugln(F("EMERGENCY"));
                 emergency_stop();
                 break;
         }
@@ -263,14 +293,14 @@ void loop() {
 void heater_start() {
     myPID.SetMode(AUTOMATIC);
     systemActive = true;
-    Serial.println(F("STARTED"));
+    debugln(F("STARTED"));
 }
 
 void heater_stop() {
     myPID.SetMode(MANUAL);
     systemActive = false;
     systemStopTime = millis();
-    Serial.println(F("STOPPED"));
+    debugln(F("STOPPED"));
 }
 
 void heater_loop() {
