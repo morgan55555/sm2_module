@@ -4,11 +4,10 @@
 #include <PID_v1.h>
 #include <DHT.h>
 
-// Debug
-// #define UART_ENABLED 1
+#define UART_ENABLED 0
 #define UART_SPEED 115200
 
-#if defined UART_ENABLED
+#if UART_ENABLED
    #define debug_init()   Serial.begin(UART_SPEED)
    #define debug(...)     Serial.print(__VA_ARGS__)
    #define debugln(...)   Serial.println(__VA_ARGS__)
@@ -17,6 +16,8 @@
    #define debug(...)
    #define debugln(...)
 #endif
+
+#define PLOT_ENABLED 1
 
 // Heater pins
 #define TEMP_SENSOR A5
@@ -27,9 +28,9 @@
 DHT sens(TEMP_SENSOR, DHT21);
 
 // PID params
-#define PID_KP 2.0
-#define PID_KI 0.05
-#define PID_KD 0.1
+#define PID_KP 120.0
+#define PID_KI 0.01
+#define PID_KD 0.0
 
 // PID values
 double Setpoint, Input, Output;
@@ -59,11 +60,13 @@ const unsigned long MIN_FAN_RUN_TIME = 30000;
 const unsigned long MODE_CHANGE_DELAY = 5000;
 unsigned long lastReadingTime = 0;
 unsigned long lastModeChangeTime = 0;
+unsigned long lastDryboxLoopTime = 0;
 unsigned long lastHeaterLoopTime = 0;
 
 // Snapmaker module
 SM2Registry registry(10);
 SM2Module vmodule(MODULE_PURIFIER, 123);
+SM2Module vmodule2(MODULE_DRYBOX, 123);
 
 // Module functions
 enum : uint8_t {
@@ -90,9 +93,7 @@ uint8_t dataLen = 0;
 uint8_t data[8];
 
 void setup() {
-    pinMode(LED_BUILTIN, OUTPUT);
-    digitalWrite(LED_BUILTIN, HIGH);
-    
+    // Debug
     debug_init();
 
     // Init sensor pin
@@ -117,17 +118,27 @@ void setup() {
     
     // Register modules
     registry.RegisterModule(&vmodule);
+    registry.RegisterModule(&vmodule2);
+
+    #if not PLOT_ENABLED
+      debugln(F("Configuring modules!"));
+    #endif
 
     // Init registry and modules
     registry.Init();
 
-    digitalWrite(LED_BUILTIN, LOW);
-    debugln(F("All modules configured successfully!"));
+    #if not PLOT_ENABLED
+      debugln(F("All modules configured successfully!"));
+    #endif
 
     // Initial report
     report_lifetime();
     report_err();
+    report_state();
 }
+
+
+///////////////////// PURIFIER FUNCTIONS /////////////////////
 
 void set_fan_status(uint8_t is_open, uint8_t is_forced) {
     // Ignore turning on, we are not actually a purifier
@@ -139,21 +150,17 @@ void set_fan_status(uint8_t is_open, uint8_t is_forced) {
     }
 }
 
-void set_fan_gears(uint8_t gears) {
-    // Do not do anything
-}
-
-void set_fan_power(uint8_t power) {
-    // I havent found yet this gcode :(
-}
-
 void set_light(uint8_t r, uint8_t g, uint8_t b) {
     // Set light is broken, every color is the same
     // But now it will be a temperature!
     if (r > 0) {
         Setpoint = r;
-        debug(F("New temperature: "));
-        debugln(Setpoint);
+
+        #if not PLOT_ENABLED
+          debug(F("New temperature: "));
+          debugln(Setpoint);
+        #endif
+
         heater_start();
     } else {
         heater_stop();
@@ -215,8 +222,99 @@ void report_status() {
     registry.SendMessage(FUNC_REPORT_PURIFIER, data, sizeof(data));
 }
 
+
+///////////////////// DRYBOX FUNCTIONS /////////////////////
+
+void report_temp_humidity() {
+    uint16_t heater_temp = 0;
+    uint16_t case_temperature = (uint16_t) Input;
+    uint16_t case_humidity = (uint16_t) humidity;
+  
+    uint8_t data[6] = {
+        heater_temp >> 8, // uint16_t value >> 8
+        heater_temp & 0xff,
+        case_temperature >> 8, // uint16_t value >> 8
+        case_temperature & 0xff,
+        case_humidity >> 8, // uint16_t value >> 8
+        case_humidity & 0xff,
+    };
+    registry.SendMessage(FUNC_REPORT_TEMP_HUMIDITY, data, sizeof(data));
+}
+
+void report_time_info() {
+    uint8_t buf[8];
+    uint8_t index = 0;
+
+      index = 0;
+      buf[index++] = 0;
+      buf[index++] = 0;
+      buf[index++] = 0;
+      buf[index++] = 0;
+      buf[index++] = 0;
+      registry.SendMessage(FUNC_REPORT_HEATING_TIME_INFO, buf, index);
+
+      index = 0;
+      buf[index++] = 1;
+      buf[index++] = 0;
+      buf[index++] = 0;
+      buf[index++] = 0;
+      buf[index++] = 0;
+      registry.SendMessage(FUNC_REPORT_HEATING_TIME_INFO, buf, index);
+
+      index = 0;
+      buf[index++] = 2;
+      buf[index++] = 0;
+      buf[index++] = 0;
+      buf[index++] = 0;
+      buf[index++] = 0;
+      registry.SendMessage(FUNC_REPORT_HEATING_TIME_INFO, buf, index);
+}
+
+void report_pid() {
+    float pid[3];
+    uint8_t u8DataBuf[8], i, j,u8Index = 0;
+    
+    pid[0] = PID_KP;
+    pid[1] = PID_KI;
+    pid[2] = PID_KD;
+  
+    for (i = 0; i < 3; i++) {
+        u8DataBuf[0] = i;
+        for (j = 0, u8Index = 1; j < 4; j ++) {
+            u8DataBuf[u8Index++] = ((uint32_t)(pid[i] * 1000)) >> (8 * (3 - j));
+        }
+        registry.SendMessage(FUNC_REPORT_TEMP_PID, u8DataBuf, u8Index);
+    }
+}
+
+void set_state(uint8_t state) {
+    if (state == 0) {
+        heater_stop();
+    }
+}
+
+void report_heater() {
+    uint8_t data[1] = {1}; // Power: ok
+    registry.SendMessage(FUNC_REPORT_HEATER_POWER_STATE, data, sizeof(data));
+}
+
+void report_cover() {
+    uint8_t data[1] = {0}; // Cover: closed
+    registry.SendMessage(FUNC_REPORT_COVER_STATE, data, sizeof(data));
+}
+
+void report_state() {
+    uint8_t data[1] = {systemActive};
+    registry.SendMessage(FUNC_REPORT_DRYBOX_STATE, data, sizeof(data));
+}
+
+////////////////////////////////////////////////////////////
+
 void emergency_stop() {
-    debugln("Emergency stop!");
+    #if not PLOT_ENABLED
+        debugln("Emergency stop!");
+    #endif
+
     return registry.DeathLoop();
 }
 
@@ -226,19 +324,11 @@ void loop() {
             case FUNC_SET_PURIFIER:
                 switch (data[0]) {
                     case PURIFIER_SET_FAN_STA:
-                        debugln(F("SET STATUS"));
+                        //debugln(F("SET STATUS"));
                         set_fan_status(data[1], data[2]);
                         break;
-                    case PURIFIER_SET_FAN_GEARS:
-                        debugln(F("SET GEARS"));
-                        set_fan_gears(data[1]);
-                        break;
-                    case PURIFIER_SET_FAN_POWER:
-                        debugln(F("SET POWER"));
-                        set_fan_power(data[1]);
-                        break;
                     case PURIFIER_SET_LIGHT:
-                        debugln(F("SET LIGHT"));
+                        //debugln(F("SET LIGHT"));
                         set_light(data[1], data[2], data[3]);
                         break;
                 }
@@ -246,31 +336,31 @@ void loop() {
             case FUNC_REPORT_PURIFIER:
                 switch (data[0]) {
                     case PURIFIER_REPORT_LIFETIME:
-                        debugln(F("REPORT LIFETIME"));
+                        //debugln(F("REPORT LIFETIME"));
                         report_lifetime();
                         break;
                     case PURIFIER_REPORT_ERR:
-                        debugln(F("REPORT ERR"));
+                        //debugln(F("REPORT ERR"));
                         report_err();
                         break;
                     case PURIFIER_REPORT_FAN_STA:
-                        debugln(F("REPORT FAN"));
+                        //debugln(F("REPORT FAN"));
                         report_fan_speed();
                         break;
                     case PURIFIER_REPORT_ELEC:
-                        debugln(F("REPORT ELEC"));
+                        //debugln(F("REPORT ELEC"));
                         report_fan_elect();
                         break;
                     case PURIFIER_REPORT_POWER:
-                        debugln(F("REPORT POWER"));
+                        //debugln(F("REPORT POWER"));
                         report_fan_power();
                         break;
                     case PURIFIER_REPORT_STATUS:
-                        debugln(F("REPORT STATUS"));
+                        //debugln(F("REPORT STATUS"));
                         report_status();
                         break;
                     case PURIFIER_INFO_ALL:
-                        debugln(F("REPORT ALL"));
+                        //debugln(F("REPORT ALL"));
                         report_lifetime();
                         report_err();
                         report_fan_speed();
@@ -280,27 +370,90 @@ void loop() {
                         break;
                 }
                 break;
+            case FUNC_SET_FAN:
+                //debugln(F("SET FAN"));
+                break;
+            case FUNC_SET_TEMPEARTURE:
+                //debugln(F("SET TEMPERATURE"));
+                break;
+            case FUNC_SET_HEAT_TIME:
+                //debugln(F("SET HEAT TIME"));
+                break;
+            case FUNC_REPORT_TEMP_HUMIDITY:
+                //debugln(F("REPORT TEMP+HUMIDITY"));
+                report_temp_humidity();
+                break;
+            case FUNC_REPORT_TEMP_PID:
+                //debugln(F("REPORT TEMP PID"));
+                report_pid();
+                break;
+            case FUNC_SET_PID:
+                //debugln(F("SET PID"));
+                break;
+            case FUNC_MODULE_START:
+                //debugln(F("START"));
+                set_state(data[0]);
+                break;
+            case FUNC_SET_MAINCTRL_TYPE:
+                //debugln(F("SET MAINCTRL TYPE"));
+                break;
+            case FUNC_REPORT_HEATER_POWER_STATE:
+                //debugln(F("REPORT HEATER POWER STATE"));
+                report_heater();
+                break;
+            case FUNC_REPORT_COVER_STATE:
+                //debugln(F("REPORT HEATER COVER STATE"));
+                report_cover();
+                break;
+            case FUNC_REPORT_DRYBOX_STATE:
+                //debugln(F("REPORT DRYBOX STATE"));
+                report_state();
+                break;
             case FUNC_EMERGENCY_STOP:
-                debugln(F("EMERGENCY"));
+                //debugln(F("EMERGENCY"));
                 emergency_stop();
                 break;
         }
     }
 
+    drybox_loop();
     heater_loop();
+}
+
+void drybox_loop() {
+    // Update every 2s
+    if (millis() - lastDryboxLoopTime < 2000) {
+        return;
+    }
+  
+    report_temp_humidity();
+    report_time_info();
+    report_state();
+
+    lastDryboxLoopTime = millis();
 }
 
 void heater_start() {
     myPID.SetMode(AUTOMATIC);
     systemActive = true;
-    debugln(F("STARTED"));
+
+    #if not PLOT_ENABLED
+        debugln(F("STARTED"));
+    #endif
+        
+    report_state();
 }
 
 void heater_stop() {
     myPID.SetMode(MANUAL);
     systemActive = false;
     systemStopTime = millis();
-    debugln(F("STOPPED"));
+
+    #if not PLOT_ENABLED
+        debugln(F("STOPPED"));
+    #endif
+    
+    report_state();
 }
 
 void heater_loop() {
@@ -331,6 +484,19 @@ void heater_loop() {
             fanRunning = false;
         }
     }
+
+    #if PLOT_ENABLED
+        debugln(F("Target,Temp,Power,MaxPower,Zero"));
+        debug(Setpoint);
+        debug(F(","));
+        debug(Input);
+        debug(F(","));
+        debug(Output/10.0);
+        debug(F(","));
+        debug(25.5);
+        debug(F(","));
+        debugln(0);
+    #endif
 
     lastHeaterLoopTime = millis();
 }
@@ -364,10 +530,10 @@ void selectHeatingMode() {
     
     HeatingMode newMode = MODE_OFF;
   
-    if (Output >= 1) {
-        if (Output <= 102) {
+    if (Output >= 75) {
+        if (Output <= 150) {
             newMode = MODE_400W;
-        } else if (Output <= 153) {
+        } else if (Output <= 200) {
             newMode = MODE_600W;
         } else {
             newMode = MODE_800W;
