@@ -56,6 +56,7 @@ SM2Module::SM2Module(MODULE_TYPE moduleType, uint32_t random,
             break;
         case MODULE_LINEAR:
         case MODULE_LINEAR_TMC:
+        case MODULE_LINEAR_A400:
             FUNC_LIST_INIT(linear_func_list_);
             break;
         case MODULE_LIGHT:
@@ -74,6 +75,7 @@ SM2Module::SM2Module(MODULE_TYPE moduleType, uint32_t random,
             FUNC_LIST_INIT(purifier_func_list_);
             break;
         case MODULE_EMERGENCY_STOP:
+        case MODULE_EMERGENCY_STOP_A400:
             FUNC_LIST_INIT(stop_func_list_);
             break;
         case MODULE_CNC_200W:
@@ -88,6 +90,7 @@ SM2Module::SM2Module(MODULE_TYPE moduleType, uint32_t random,
         case MODULE_CALIBRATOR:
             FUNC_LIST_INIT(calibrator_func_list_);
             break;
+        case MODULE_LASER_2W_INFRARED:
         case MODULE_LASER_20W:
         case MODULE_LASER_40W:
             FUNC_LIST_INIT(laser_20w40w_func_list_);
