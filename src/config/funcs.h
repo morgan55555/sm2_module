@@ -97,6 +97,8 @@ typedef enum {
     FUNC_MODULE_LASER_BRANCH_CTRL           ,   // 68
     FUNC_SET_RIGHT_LEVEL_MODE               ,   // 69
     FUNC_REPORT_RIGHT_LEVEL_MODE_INFO       ,   // 70
+    FUNC_GET_LASER_WEAK_POWER               ,   // 71
+    FUNC_SET_LASER_WEAK_POWER               ,   // 72
 
     FUNC_EMERGENCY_STOP = 0xFE,
     FUNC_HEARTBEAT = 0xFF,
@@ -161,6 +163,8 @@ const uint16_t laser_10w_func_list_[] = {
   FUNC_MODULE_GET_HW_VERSION,
   FUNC_REPORT_PIN_STATUS,
   FUNC_CONFIRM_PIN_STATUS,
+  FUNC_GET_LASER_WEAK_POWER,
+  FUNC_SET_LASER_WEAK_POWER,
 };
 
 const uint16_t cnc_func_list_[] = {
@@ -260,7 +264,11 @@ const uint16_t laser_20w40w_func_list_[] = {
   FUNC_SET_CROSSLIGHT_OFFSET,
   FUNC_GET_CROSSLIGHT_OFFSET,
   FUNC_MODULE_LASER_BRANCH_CTRL,
+  FUNC_GET_LASER_WEAK_POWER,
+  FUNC_SET_LASER_WEAK_POWER,
 };
+
+
 
 const uint16_t default_func_list_[] = {};
 
